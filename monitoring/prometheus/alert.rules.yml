@@ -1,0 +1,26 @@
+groups:
+  - name: AIOps_Triggers
+    rules:
+      # Rule 1: CPU triggers if usage > 5%, UNLESS memory crosses the 90% danger zone.
+      - alert: HighCpuUsage_CheckoutService
+        expr: >
+          (avg_over_time(docker_container_cpu_usage_percent{container_name="checkoutservice", cpu="cpu-total"}[30s]) > 5)
+          unless on(container_name)
+          (docker_container_mem_usage_percent{container_name="checkoutservice"} > 90)
+        for: 15s
+        labels:
+          severity: warning
+          service: checkoutservice
+        annotations:
+          summary: "High CPU usage detected on Checkout Service"
+          description: "CPU usage spiked independently of memory. Ready to trigger LLM analysis."
+
+      # Rule 2: OOM triggers strictly when memory crosses 90%
+      - alert: HighMemory_OOM_Risk
+        expr: docker_container_mem_usage_percent{container_name="checkoutservice"} > 90
+        for: 0s
+        labels:
+          severity: critical
+          service: checkoutservice
+        annotations:
+          summary: "Memory collapse risk (OOM) detected in CheckoutService!"

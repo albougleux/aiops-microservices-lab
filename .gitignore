@@ -1,0 +1,17 @@
+# Security / Secrets
+.env
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Other files
+snapshot.txt
+commands.txt

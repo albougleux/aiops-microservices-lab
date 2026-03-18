@@ -1,0 +1,175 @@
+services:
+  # ==========================================
+  # Target Application: Google Online Boutique
+  # ==========================================
+  redis-cart:
+    image: redis:alpine
+    container_name: redis-cart
+    restart: always
+
+  cartservice:
+    image: gcr.io/google-samples/microservices-demo/cartservice:v0.8.0
+    container_name: cartservice
+    restart: always
+    environment:
+      - PORT=7070
+      - REDIS_ADDR=redis-cart:6379
+      - DISABLE_PROFILER=1
+
+  productcatalogservice:
+    image: gcr.io/google-samples/microservices-demo/productcatalogservice:v0.8.0
+    container_name: productcatalogservice
+    restart: always
+    environment:
+      - PORT=3550
+      - DISABLE_PROFILER=1
+
+  currencyservice:
+    image: gcr.io/google-samples/microservices-demo/currencyservice:v0.8.0
+    container_name: currencyservice
+    restart: always
+    environment:
+      - PORT=7000
+      - DISABLE_PROFILER=1
+      - DISABLE_DEBUGGER=1
+
+  paymentservice:
+    image: gcr.io/google-samples/microservices-demo/paymentservice:v0.8.0
+    container_name: paymentservice
+    restart: always
+    environment:
+      - PORT=50051
+      - DISABLE_PROFILER=1
+      - DISABLE_DEBUGGER=1
+
+  shippingservice:
+    image: gcr.io/google-samples/microservices-demo/shippingservice:v0.8.0
+    container_name: shippingservice
+    restart: always
+    environment:
+      - PORT=50050
+      - DISABLE_PROFILER=1
+
+  emailservice:
+    image: gcr.io/google-samples/microservices-demo/emailservice:v0.8.0
+    container_name: emailservice
+    restart: always
+    environment:
+      - PORT=8080
+      - DISABLE_PROFILER=1
+
+  adservice:
+    image: gcr.io/google-samples/microservices-demo/adservice:v0.8.0
+    container_name: adservice
+    restart: always
+    environment:
+      - PORT=9555
+      - DISABLE_PROFILER=1
+
+  recommendationservice:
+    image: gcr.io/google-samples/microservices-demo/recommendationservice:v0.8.0
+    container_name: recommendationservice
+    restart: always
+    environment:
+      - PORT=8080
+      - PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550
+      - DISABLE_PROFILER=1
+
+  checkoutservice:
+    image: gcr.io/google-samples/microservices-demo/checkoutservice:v0.8.0
+    container_name: checkoutservice
+    restart: always
+    environment:
+      - PORT=5050
+      - CART_SERVICE_ADDR=cartservice:7070
+      - PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550
+      - CURRENCY_SERVICE_ADDR=currencyservice:7000
+      - SHIPPING_SERVICE_ADDR=shippingservice:50050
+      - PAYMENT_SERVICE_ADDR=paymentservice:50051
+      - EMAIL_SERVICE_ADDR=emailservice:8080
+      - DISABLE_PROFILER=1
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 100M
+
+  frontend:
+    image: gcr.io/google-samples/microservices-demo/frontend:v0.8.0
+    container_name: frontend
+    restart: always
+    environment:
+      - PORT=8080
+      - CART_SERVICE_ADDR=cartservice:7070
+      - CHECKOUT_SERVICE_ADDR=checkoutservice:5050
+      - PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550
+      - CURRENCY_SERVICE_ADDR=currencyservice:7000
+      - AD_SERVICE_ADDR=adservice:9555
+      - RECOMMENDATION_SERVICE_ADDR=recommendationservice:8080
+      - SHIPPING_SERVICE_ADDR=shippingservice:50050
+      - DISABLE_PROFILER=1
+    ports:
+      - "8080:8080"
+
+  # ==========================================
+  # Monitoring & Observability Stack
+  # ==========================================
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf
+    user: root
+    entrypoint: ["telegraf"]
+    restart: always
+    ports:
+      - "9273:9273"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./monitoring/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/prometheus/alertmanager.yaml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+
+  ai-agent:
+    build: ./llm-trigger
+    container_name: ai-agent
+    restart: always
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    ports:
+      - "5000:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./llm-trigger:/app
+
+  ai-agent-continuous:
+    build: ./llm-trigger
+    container_name: ai-agent-continuous
+    profiles: ["continuous"]
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DISCORD_WEBHOOK_URL_CONTINUOUS=${DISCORD_WEBHOOK_URL_CONTINUOUS}
+      - TARGET_CONTAINERS=checkoutservice,frontend
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./llm-trigger:/app
+    command: ["python", "-u", "continuous_analyzer.py"]
