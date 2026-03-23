@@ -6,6 +6,11 @@ services:
     image: redis:alpine
     container_name: redis-cart
     restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 100M
 
   cartservice:
     image: gcr.io/google-samples/microservices-demo/cartservice:v0.8.0
@@ -108,6 +113,11 @@ services:
       - RECOMMENDATION_SERVICE_ADDR=recommendationservice:8080
       - SHIPPING_SERVICE_ADDR=shippingservice:50050
       - DISABLE_PROFILER=1
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200M
     ports:
       - "8080:8080"
 

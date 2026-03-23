@@ -15,3 +15,6 @@ Thumbs.db
 # Other files
 snapshot.txt
 commands.txt
+
+# Agents
+.agents

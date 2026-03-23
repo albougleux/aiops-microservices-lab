@@ -1,6 +1,7 @@
 import os
 import time
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import docker
 from flask import Flask, request, jsonify
 import google.generativeai as genai
@@ -28,6 +29,7 @@ else:
 # In-memory cache to prevent duplicate alerts
 processed_alerts = {}
 COOLDOWN_SECONDS = 300
+executor = ThreadPoolExecutor(max_workers=5)
 
 def get_container_logs(container_name, lines=200):
     """Extracts the last log lines from the affected container."""
@@ -128,11 +130,10 @@ def prometheus_webhook():
             
             logs = get_container_logs(container_name)
             
-            analysis_thread = threading.Thread(
-                target=trigger_llm_analysis, 
-                args=(alert_name, container_name, logs)
+            executor.submit(
+                trigger_llm_analysis, 
+                alert_name, container_name, logs
             )
-            analysis_thread.start()
 
     return jsonify({"status": "Success, alerts accepted for background processing"}), 200
 
