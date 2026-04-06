@@ -26,13 +26,16 @@ else:
     print("[CRITICAL] GEMINI_API_KEY not found! The agent won't be able to analyze logs.")
     model = None
 
+# Cross-service monitoring targets (same scope as Continuous agent)
+MONITOR_TARGETS = ['checkoutservice', 'frontend']
+
 # In-memory cache to prevent duplicate alerts
 processed_alerts = {}
 COOLDOWN_SECONDS = 300
 executor = ThreadPoolExecutor(max_workers=5)
 
 def get_container_logs(container_name, lines=200):
-    """Extracts the last log lines from the affected container."""
+    """Extracts the last log lines from a single container."""
     if not docker_client:
         return "Log extraction failed due to missing Docker client."
         
@@ -47,6 +50,14 @@ def get_container_logs(container_name, lines=200):
         print(f"[ERROR] Failed to extract logs from {container_name}: {e}")
         return "Log extraction failed."
 
+def get_cross_service_logs(lines=200):
+    """Collects logs from all monitored containers for cross-service analysis."""
+    combined_logs = ""
+    for target in MONITOR_TARGETS:
+        logs = get_container_logs(target, lines)
+        combined_logs += f"\n--- LOGS FROM [{target.upper()}] ---\n{logs}\n--- END [{target.upper()}] ---\n"
+    return combined_logs
+
 def trigger_llm_analysis(alert_name, container_name, logs):
     """Builds the System Prompt, sends it to Gemini, and calculates FinOps metrics."""
     
@@ -54,16 +65,17 @@ def trigger_llm_analysis(alert_name, container_name, logs):
     You are an expert Site Reliability Engineer (SRE) specializing in microservices diagnostics.
     An infrastructure alert named '{alert_name}' has just fired for the container '{container_name}'.
     
-    Below are the most recent log lines from this container leading up to the failure.
-    Analyze the logs, identify any potential root causes, anomalies, resource exhaustion, or cascading failures.
+    Below are the most recent log lines from MULTIPLE containers in the service mesh, collected for cross-service correlation.
+    Analyze the logs from ALL containers, identify any potential root causes, anomalies, resource exhaustion, or cascading failures.
+    Use distributed tracing by correlating IDs (like 'http.req.id', 'session', 'user_id', 'trace_id', or 'span_id') across services to map the full request journey.
     
     🔍 CRITICAL INSTRUCTION FOR TRACING (POISON PILL DETECTION):
-    If the infrastructure collapse (e.g., OOMKilled, CPU spike) was triggered by a specific malformed request, a massive payload, or a traffic burst, look for OpenTelemetry correlation IDs (like 'http.req.id', 'session', 'trace_id', or 'span_id') in the JSON logs immediately preceding the failure. 
+    If the infrastructure collapse (e.g., OOMKilled, CPU spike) was triggered by a specific malformed request, a massive payload, or a traffic burst, look for OpenTelemetry correlation IDs in the JSON logs immediately preceding the failure. 
     You MUST explicitly extract and report these IDs in your summary so the engineering team can trace the "poison pill" request upstream to the API gateway.
     
     Provide a concise, actionable Root Cause Analysis (RCA) summary for the on-call engineering team in Markdown format.
     
-    --- RAW LOGS ---
+    --- RAW LOGS (CROSS-SERVICE) ---
     {logs}
     --- END LOGS ---
     """
@@ -128,7 +140,7 @@ def prometheus_webhook():
             
             print(f"\n🚨 [EVENT TRIGGERED] {alert_name} fired on service {container_name}!")
             
-            logs = get_container_logs(container_name)
+            logs = get_cross_service_logs()
             
             executor.submit(
                 trigger_llm_analysis, 

@@ -12,9 +12,10 @@ env/
 .DS_Store
 Thumbs.db
 
-# Other files
-snapshot.txt
-commands.txt
-
 # Agents
 .agents
+results
+markdowns
+
+# Scripts
+scripts
