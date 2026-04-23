@@ -1,0 +1,16 @@
+redis-cart | 0.29% | 4.953MiB / 100MiB
+prometheus | 0.00% | 32.63MiB / 15.62GiB
+telegraf | 0.65% | 44.3MiB / 15.62GiB
+ai-agent-continuous | 0.09% | 57.02MiB / 15.62GiB
+ai-agent | 0.01% | 62.07MiB / 15.62GiB
+alertmanager | 0.13% | 12.72MiB / 15.62GiB
+emailservice | 0.05% | 39.5MiB / 15.62GiB
+paymentservice | 0.00% | 12.57MiB / 15.62GiB
+frontend | 1.60% | 9.527MiB / 200MiB
+currencyservice | 3.04% | 18MiB / 15.62GiB
+checkoutservice | 0.00% | 6.555MiB / 100MiB
+adservice | 2.31% | 77.24MiB / 15.62GiB
+productcatalogservice | 0.16% | 6.875MiB / 15.62GiB
+cartservice | 0.52% | 25.52MiB / 15.62GiB
+recommendationservice | 0.06% | 37.65MiB / 15.62GiB
+shippingservice | 0.00% | 4.051MiB / 15.62GiB

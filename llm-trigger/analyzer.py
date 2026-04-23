@@ -1,6 +1,5 @@
 import os
 import time
-import threading
 from concurrent.futures import ThreadPoolExecutor
 import docker
 from flask import Flask, request, jsonify
@@ -16,7 +15,6 @@ except Exception as e:
     print(f"[CRITICAL] Failed to initialize Docker client: {e}")
     docker_client = None
 
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
@@ -26,10 +24,8 @@ else:
     print("[CRITICAL] GEMINI_API_KEY not found! The agent won't be able to analyze logs.")
     model = None
 
-# Cross-service monitoring targets (same scope as Continuous agent)
 MONITOR_TARGETS = ['checkoutservice', 'frontend']
 
-# In-memory cache to prevent duplicate alerts
 processed_alerts = {}
 COOLDOWN_SECONDS = 300
 executor = ThreadPoolExecutor(max_workers=5)
@@ -135,7 +131,6 @@ def prometheus_webhook():
                     print(f"\n⏭️ [SKIP] Alert '{alert_id}' was already analyzed {int(time_since_last)}s ago. Ignoring duplicate.")
                     continue
             
-            # Mark the alert as processed right now
             processed_alerts[alert_id] = current_time
             
             print(f"\n🚨 [EVENT TRIGGERED] {alert_name} fired on service {container_name}!")

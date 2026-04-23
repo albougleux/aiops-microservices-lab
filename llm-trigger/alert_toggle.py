@@ -7,7 +7,6 @@ ALERTMANAGER_URL = os.getenv("ALERTMANAGER_URL", "http://alertmanager:9093")
 
 def disable_alert(alert_name):
     """Mutes the alert effectively forever (10 years) using Alertmanager Silences."""
-    # SRE Best Practice: Use timezone-aware UTC datetime to avoid Python deprecation warnings
     start_time = datetime.datetime.now(datetime.timezone.utc)
     end_time = start_time + datetime.timedelta(days=365 * 10)
 
@@ -18,7 +17,7 @@ def disable_alert(alert_name):
         "startsAt": start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "endsAt": end_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "createdBy": "AIOps CLI",
-        "comment": f"Manually DISABLED via CLI for testing"
+        "comment": "Manually DISABLED via CLI for testing"
     }
 
     try:
@@ -31,7 +30,6 @@ def disable_alert(alert_name):
 def enable_alert(alert_name):
     """Finds active silences for this alert and deletes them, re-enabling the alert."""
     try:
-        # Fetch all silences
         response = requests.get(f"{ALERTMANAGER_URL}/api/v2/silences")
         response.raise_for_status()
         silences = response.json()
@@ -41,14 +39,13 @@ def enable_alert(alert_name):
         for silence in silences:
             if silence.get('status', {}).get('state') == 'active':
                 for matcher in silence.get('matchers', []):
-                    # Check if this silence applies to our specific alert
                     if matcher.get('name') == 'alertname' and matcher.get('value') == alert_name:
                         silence_id = silence['id']
                         
                         del_response = requests.delete(f"{ALERTMANAGER_URL}/api/v2/silence/{silence_id}")
                         del_response.raise_for_status()
                         deleted_any = True
-                        break # Move to the next silence once deleted
+                        break
         
         if deleted_any:
             print(f"✅ [ENABLED] Alert '{alert_name}' is now ACTIVE and watching.")

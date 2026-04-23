@@ -9,7 +9,6 @@ def _send_discord_webhook(webhook_url, username, avatar_url, embed_title, embed_
         print(f"[INFO] Webhook URL for {username} not configured. Skipping ChatOps alert.")
         return
 
-    # Truncating to 4000 to leave room for the markdown formatting.
     safe_report = report
     if len(report) > 4000:
         safe_report = report[:4000] + "\n\n... [REPORT TRUNCATED DUE TO DISCORD LIMITS]"

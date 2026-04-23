@@ -14,8 +14,9 @@ Thumbs.db
 
 # Agents
 .agents
-results
 markdowns
+tcc-utils/
 
-# Scripts
-scripts
+# Results
+results/*/old
+results/*/scratch

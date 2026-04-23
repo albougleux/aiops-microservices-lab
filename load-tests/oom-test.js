@@ -12,7 +12,6 @@ export const options = {
 const targetHost = __ENV.TARGET_HOST || "localhost";
 const BASE_URL = `http://${targetHost}:8080`;
 
-// A string of 2.5 million chars equals ~2MB per request payload.
 const EFFICIENT_JUNK_DATA = "A".repeat(2000000);
 
 export default function () {

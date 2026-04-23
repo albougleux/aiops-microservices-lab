@@ -17,11 +17,10 @@ except Exception as e:
     docker_client = None
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL_CONTINUOUS")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-2.5-flash') 
+    model = genai.GenerativeModel('gemini-2.5-flash')
 else:
     model = None
 
@@ -123,7 +122,6 @@ def main():
         combined_logs = ""
         current_check_time = int(time.time())
         
-        # 1. Collect and Aggregate Logs
         for container in TARGET_CONTAINERS:
             logs = get_container_logs(container, last_check_times[container])
             last_check_times[container] = current_check_time
@@ -132,7 +130,6 @@ def main():
                 combined_logs += f"\n\n{'='*20} CONTAINER: {container.upper()} {'='*20}\n"
                 combined_logs += logs
         
-        # 2. Trigger Single LLM Analysis with Full Context
         if combined_logs.strip():
             trigger_llm_analysis(TARGET_CONTAINERS, combined_logs.strip(), POLL_INTERVAL_SECONDS)
         

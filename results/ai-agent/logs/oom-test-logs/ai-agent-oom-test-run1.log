@@ -1,0 +1,61 @@
+[INFO] Docker client initialized successfully.
+============================================================
+🚀 Event-Driven AIOps Agent Started. Listening on port 5000...
+============================================================
+ * Serving Flask app 'analyzer'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.18.0.3:5000
+[33mPress CTRL+C to quit[0m
+
+🚨 [EVENT TRIGGERED] HighCpuUsage_Frontend fired on service frontend!
+[INFO] Extracting the last 200 log lines from container: checkoutservice
+[INFO] Extracting the last 200 log lines from container: frontend
+
+172.18.0.12 - - [07/Apr/2026 00:07:13] "POST /webhook HTTP/1.1" 200 -
+============================================================
+🤖 [AIOps] Sending payload and logs to Google Gemini for frontend...
+============================================================
+
+✅ [AI DIAGNOSTIC REPORT]
+------------------------------------------------------------
+## Root Cause Analysis (RCA) Summary for HighCpuUsage_Frontend
+
+**Alert Fired**: `HighCpuUsage_Frontend` for container 'frontend'
+
+**Observed Anomaly & Correlation:**
+
+1.  **Sudden Traffic Burst on Frontend**: Logs from the `FRONTEND` service show an immediate and significant surge of `POST /cart/checkout` requests. Starting around `2026-04-07T00:07:01.184Z`, the frontend began processing dozens of these requests within a very short timeframe (hundreds of milliseconds). Each request logs "request started" and "placing order".
+2.  **Checkout Service Unresponsiveness/Backlog**: Corresponding logs in the `CHECKOUTSERVICE` show regular `[PlaceOrder]` entries up until `2026-04-07T00:06:53.598Z`. Critically, there are **no `[PlaceOrder]` logs from the `CHECKOUTSERVICE` corresponding to the massive burst of "placing order" requests seen in the `FRONTEND` logs after `00:07:01Z`**. This strongly suggests that the `CHECKOUTSERVICE` is either overwhelmed, unresponsive, or potentially crashed, failing to process the new checkout requests from the `frontend`.
+3.  **Cascading Effect**: The `frontend` service is experiencing high CPU usage due to trying to handle this sudden influx of checkout requests, likely exacerbated by the `checkoutservice` not responding or being too slow, causing the `frontend` to exhaust its own resources (e.g., waiting for RPCs, retrying, buffering requests).
+
+**Identified Root Cause:**
+
+The immediate root cause of the `HighCpuUsage_Frontend` alert is a **massive traffic burst of `POST /cart/checkout` requests directed at the `frontend` service.** This high volume of incoming requests, combined with an apparent inability of the downstream `CHECKOUTSERVICE` to process them (or even log their receipt), has led to resource exhaustion on the `frontend` container.
+
+**Poison Pill/Traffic Burst Correlation IDs:**
+
+While not a single "poison pill" request, the infrastructure collapse was triggered by a sustained, high-volume traffic burst. The following `http.req.id`s are among the first requests recorded during this burst in the `FRONTEND` logs and should be used to trace the origin of this traffic upstream (e.g., to the API Gateway or client):
+
+*   `84462113-e0d8-4919-bfb5-325b0584ac4e` (started at `2026-04-07T00:07:01.184615017Z`)
+*   `95b7d8b6-1eb5-4c0c-a28a-edca204c321e` (started at `2026-04-07T00:07:01.185242898Z`)
+*   `ac056f9c-bc31-4897-9a44-1d9161de7136` (started at `2026-04-07T00:07:01.186137207Z`)
+*   `e8247dfe-b8ff-47af-ab34-9c4de03ba4ad` (started at `2026-04-07T00:07:01.187188768Z`)
+
+**Actionable Recommendations for On-Call Team:**
+
+1.  **Investigate Traffic Source**: Immediately trace the `http.req.id`s provided above upstream to identify the source of the `/cart/checkout` traffic burst (e.g., a specific user, bot, load test, or misconfigured client application).
+2.  **Check Checkout Service Health**: Investigate the current state and logs of the `CHECKOUTSERVICE` to determine why it stopped processing requests after `00:06:53Z` and if it is currently healthy or requires restart/scaling.
+3.  **Implement Rate Limiting**: Apply aggressive rate limiting at the API Gateway or `frontend` level for the `/cart/checkout` endpoint to prevent similar traffic bursts from overwhelming the system.
+4.  **Review Resource Limits/Autoscaling**: Evaluate and potentially increase CPU/memory limits and implement/adjust autoscaling policies for both `frontend` and `checkoutservice` to handle sudden load increases more gracefully.
+5.  **Circuit Breaking/Backpressure**: Consider implementing circuit breakers or robust backpressure mechanisms between `frontend` and `checkoutservice` to prevent cascading failures when a downstream service becomes unhealthy.
+------------------------------------------------------------
+
+📊 [FINOPS METRICS - LAB DATA]
+⏱️ Latency (Time to diagnose): 35.64 seconds
+🪙 Tokens Used: 36507 Total (33054 Input + 1066 Output)
+============================================================
+
+✅ [CHATOPS] Alert successfully sent to Discord via AIOps Triage Bot (Event-Driven)!
