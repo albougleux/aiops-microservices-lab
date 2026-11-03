@@ -4,6 +4,12 @@ Comparative study of two AIOps agent architectures for automated fault diagnosis
 
 Both agents use **Google Gemini 2.5 Flash** to perform Root Cause Analysis (RCA) on Docker container logs and deliver diagnostic reports via **Discord** (ChatOps).
 
+## Publication
+
+- 📄 [Full thesis (PDF, pt-BR)](docs/tcc-aiops-pt-br.pdf), including all tables and results
+- 🔗 Article published in Revista E&S (MBA USP/Esalq): [pt-BR](https://revistaes.com.br/artigos/diagnostico-automatizado-de-falhas-em-microsservicos-via-agentes-aiops) · [English](https://revistaes.com.br/artigos/diagnostico-automatizado-de-falhas-em-microsservicos-via-agentes-aiops?lang=en)
+- DOI: [10.22167/2675-6528-202600482](https://doi.org/10.22167/2675-6528-202600482)
+
 ## Architecture
 
 ```
