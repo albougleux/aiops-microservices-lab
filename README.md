@@ -62,6 +62,8 @@ Both agents use **Google Gemini 2.5 Flash** to perform Root Cause Analysis (RCA)
 
 ```
 ├── docker-compose.yml          # Full stack: Online Boutique + monitoring + AI agents
+├── docs/
+│   └── tcc-aiops-pt-br.pdf     # Full thesis (pt-BR)
 ├── llm-trigger/                # AI agent source code
 │   ├── analyzer.py             # Event-Driven agent
 │   ├── continuous_analyzer.py  # Continuous Polling agent
@@ -83,21 +85,7 @@ Both agents use **Google Gemini 2.5 Flash** to perform Root Cause Analysis (RCA)
 │   │   └── alertmanager.yaml   # Webhook routing to AI agent
 │   └── telegraf/
 │       └── telegraf.conf       # Docker metrics exporter
-├── results/                    # Raw experiment data (5 runs × 5 scenarios × 2 agents)
-│   ├── ai-agent/
-│   │   └── logs/
-│   │       ├── baseline-logs/
-│   │       ├── error-spike-logs/
-│   │       ├── chaos-spike-logs/
-│   │       ├── cpu-spike-logs/
-│   │       └── oom-test-logs/
-│   └── ai-agent-continuous/
-│       └── logs/
-│           ├── baseline-logs/
-│           ├── error-spike-logs/
-│           ├── chaos-spike-logs/
-│           ├── cpu-spike-logs/
-│           └── oom-test-logs/
+├── results/                    # Experiment output, created by scripts/ at runtime (gitignored, not versioned)
 └── scripts/                    # Automation scripts for running experiments
     ├── run-ai-agent.sh         # Orchestrates N runs with the Event-Driven agent
     ├── run-ai-agent-continuous.sh  # Orchestrates N runs with the Continuous agent
